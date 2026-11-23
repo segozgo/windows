@@ -1,0 +1,89 @@
+#include <windows.h>
+#include <stdint.h>
+#define WIDTH 800 
+#define HEIGHT 400
+
+static uint32_t g_pixel[WIDTH * HEIGHT];
+static void clear(uint32_t *pixel, uint32_t color) {
+    for(int i = 0; i < WIDTH * HEIGHT; i++) {
+        pixel[i] = color;
+    }
+}
+
+LRESULT CALLBACK win(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch(msg) {
+        case WM_CLOSE:
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
+        default:
+        return DefWindowProcA(hwnd, msg, wParam, lParam);
+    }
+}
+
+int main(void) {
+    WNDCLASS w = {0};
+    w.lpfnWndProc = win;
+    w.hInstance = GetModuleHandleA(NULL);
+    w.lpszClassName = "window";
+    w.hCursor = LoadCursor(NULL, IDC_ARROW);
+    RegisterClassA(&w);
+    HWND hwnd = CreateWindowExA(
+        0,
+        w.lpszClassName,
+        "window only",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        800,
+        400,
+        NULL,
+        NULL,
+        w.hInstance,
+        NULL
+    );
+
+    if(!hwnd) {
+        return 1;
+    }
+
+    ShowWindow(hwnd, SW_SHOW);
+    UpdateWindow(hwnd);
+
+    BITMAPINFO bmi = {0};
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth = WIDTH;
+    bmi.bmiHeader.biHeight = -HEIGHT;
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
+
+    int running = 1;
+    while(running) {
+        MSG msg;
+        while(PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if(msg.message == WM_QUIT) {
+                running = 0;
+            }
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+
+        clear(g_pixel, 0x00E04040);
+
+        RECT client;
+        GetClientRect(hwnd, &client);
+        HDC hdc = GetDC(hwnd);
+        StretchDIBits(
+            hdc,
+            0, 0, client.right - client.left, client.bottom - client.top,
+            0, 0, WIDTH, HEIGHT,
+            g_pixel, &bmi, DIB_RGB_COLORS, SRCCOPY
+        );
+        ReleaseDC(hwnd, hdc);
+
+        Sleep(16);
+    }
+    DestroyWindow(hwnd);
+    return 0;
+}
