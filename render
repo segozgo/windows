@@ -9,7 +9,22 @@ static void clear(uint32_t *pixel, uint32_t color) {
         pixel[i] = color;
     }
 }
-
+static void pix(int x_loc, int y_loc, uint32_t *p_loc, int wid, int hei,uint32_t color) {
+    if(!p_loc || wid <= 0 || hei <= 0) {
+        return;
+    }
+    for(int y = y_loc; y < y_loc + hei; y++) {
+        if(y < 0 || y >= HEIGHT) {
+            continue;
+        }
+        for(int x = x_loc; x < x_loc + wid; x++) {
+            if(x < 0 || x >= WIDTH) {
+                continue;
+            }
+            p_loc[x + WIDTH * y] = color;
+        }
+    }
+}
 LRESULT CALLBACK win(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch(msg) {
         case WM_CLOSE:
@@ -69,7 +84,8 @@ int main(void) {
             DispatchMessage(&msg);
         }
 
-        clear(g_pixel, 0x00E04040);
+        clear(g_pixel, 0xffffff);
+        pix(200, 200, g_pixel, 80, 80, 0xd50101);
 
         RECT client;
         GetClientRect(hwnd, &client);
